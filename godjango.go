@@ -2,14 +2,19 @@ package godjango
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 const version = "1.0.0"
 
+// GoDjango is the overall type for the GoDjango package. Members that are exported in this type
+// are available to any application that uses it.
 type GoDjango struct {
 	AppName  string
 	Debug    bool
@@ -17,6 +22,7 @@ type GoDjango struct {
 	ErrorLog *log.Logger
 	InfoLog  *log.Logger
 	RootPath string
+	Routes   *chi.Mux
 	config   config
 }
 
@@ -25,6 +31,8 @@ type config struct {
 	renderer string
 }
 
+// New reads the .env file, creates our application config, populates the GoDjango type with settings
+// based on .env values, and creates necessary folders and files if they don't exist
 func (g *GoDjango) New(rootPath string) error {
 	pathConfig := initPaths{
 		rootPath:    rootPath,
@@ -52,6 +60,7 @@ func (g *GoDjango) New(rootPath string) error {
 	g.Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 	g.Version = version
 	g.RootPath = rootPath
+	g.Routes = g.routes().(*chi.Mux)
 	g.config = config{
 		port:     os.Getenv("PORT"),
 		renderer: os.Getenv("RENDERER"),
@@ -60,6 +69,7 @@ func (g *GoDjango) New(rootPath string) error {
 	return nil
 }
 
+// Init creates necessary folders for our GoDjango application
 func (g *GoDjango) Init(p initPaths) error {
 	root := p.rootPath
 	for _, path := range p.folderNames {
@@ -70,6 +80,21 @@ func (g *GoDjango) Init(p initPaths) error {
 		}
 	}
 	return nil
+}
+
+// ListenAndServe start the web server
+func (g *GoDjango) ListenAndServe() {
+	srv := http.Server{
+		Addr:         fmt.Sprintf(":%s", g.config.port),
+		ErrorLog:     g.ErrorLog,
+		Handler:      g.routes(),
+		IdleTimeout:  30 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 600 * time.Second,
+	}
+	g.InfoLog.Printf("Listening on port %s", g.config.port)
+	err := srv.ListenAndServe()
+	g.ErrorLog.Fatal(err)
 }
 
 func (g *GoDjango) checkDotEnv(path string) error {
