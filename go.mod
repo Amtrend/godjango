@@ -1,4 +1,4 @@
-module godjango
+module github.com/Amtrend/godjango
 
 go 1.22
 

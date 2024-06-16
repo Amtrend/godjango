@@ -2,6 +2,7 @@ package godjango
 
 import (
 	"fmt"
+	"github.com/Amtrend/godjango/render"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"log"
@@ -23,6 +24,7 @@ type GoDjango struct {
 	InfoLog  *log.Logger
 	RootPath string
 	Routes   *chi.Mux
+	Render   *render.Render
 	config   config
 }
 
@@ -65,6 +67,7 @@ func (g *GoDjango) New(rootPath string) error {
 		port:     os.Getenv("PORT"),
 		renderer: os.Getenv("RENDERER"),
 	}
+	g.createRenderer()
 
 	return nil
 }
@@ -87,7 +90,7 @@ func (g *GoDjango) ListenAndServe() {
 	srv := http.Server{
 		Addr:         fmt.Sprintf(":%s", g.config.port),
 		ErrorLog:     g.ErrorLog,
-		Handler:      g.routes(),
+		Handler:      g.Routes,
 		IdleTimeout:  30 * time.Second,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 600 * time.Second,
@@ -111,4 +114,13 @@ func (g *GoDjango) startLoggers() (*log.Logger, *log.Logger) {
 	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	return infoLog, errorLog
+}
+
+func (g *GoDjango) createRenderer() {
+	myRenderer := render.Render{
+		Renderer: g.config.renderer,
+		RootPath: g.RootPath,
+		Port:     g.config.port,
+	}
+	g.Render = &myRenderer
 }
