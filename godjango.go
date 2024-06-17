@@ -3,6 +3,7 @@ package godjango
 import (
 	"fmt"
 	"github.com/Amtrend/godjango/render"
+	"github.com/CloudyKit/jet/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"log"
@@ -25,6 +26,7 @@ type GoDjango struct {
 	RootPath string
 	Routes   *chi.Mux
 	Render   *render.Render
+	JetViews *jet.Set
 	config   config
 }
 
@@ -67,6 +69,11 @@ func (g *GoDjango) New(rootPath string) error {
 		port:     os.Getenv("PORT"),
 		renderer: os.Getenv("RENDERER"),
 	}
+	var views = jet.NewSet(
+		jet.NewOSFileSystemLoader(fmt.Sprintf("%s/views", rootPath)),
+		jet.InDevelopmentMode(),
+	)
+	g.JetViews = views
 	g.createRenderer()
 
 	return nil
@@ -121,6 +128,7 @@ func (g *GoDjango) createRenderer() {
 		Renderer: g.config.renderer,
 		RootPath: g.RootPath,
 		Port:     g.config.port,
+		JetViews: g.JetViews,
 	}
 	g.Render = &myRenderer
 }
