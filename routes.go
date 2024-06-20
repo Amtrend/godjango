@@ -14,9 +14,6 @@ func (g *GoDjango) routes() http.Handler {
 		mux.Use(middleware.Logger)
 	}
 	mux.Use(middleware.Recoverer)
-	//test routes
-	//mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-	//	fmt.Fprint(w, "Welcome to GoDjango")
-	//})
+	mux.Use(g.SessionLoad)
 	return mux
 }
